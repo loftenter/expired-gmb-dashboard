@@ -186,6 +186,11 @@ window.dash = (() => {
   .xp-freeze tbody tr.is-clean td:first-child { box-shadow: inset 4px 0 0 var(--blue-line); }
   .xp-freeze tbody tr.is-marked td, .xp-freeze tbody tr.is-marked:hover td { background: var(--accent-soft); }
   .xp-freeze tbody tr.is-marked td:first-child { box-shadow: inset 4px 0 0 var(--accent-strong); }
+  .xp-selbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .xp-selbar button.xp-btn { cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; padding: 6px 12px; }
+  .xp-selbar button.xp-btn[disabled] { opacity: .45; cursor: default; }
+  .xp-selmsg { font-size: 13px; color: var(--muted); }
+  .xp-selmsg.is-warn { color: var(--amber-text); font-weight: 600; }
   .xp-empty { margin: 0; padding: 14px; border: 1px dashed var(--line-strong); border-radius: var(--r-sm); color: var(--muted); font-size: 14px; background: var(--surface-soft); }
   @media (max-width: 760px) { .xp-hide-sm { display: none; } }
   .xp [data-dash-source-state=empty] { color: transparent; }
@@ -241,11 +246,16 @@ window.dash = (() => {
           <div class="xp-sub">.com .net .org · Google profiles in the US, UK, Canada, Australia, New Zealand, Ireland · niche names anywhere</div>
           <h2>English Google-profile domains and niche names</h2>
         </div>
-        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Rows in <b style="color: var(--blue-text)">blue</b> have a DataForSEO spam score of 30 or lower (a cleaner link profile). Click a row to highlight it green. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
+        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Rows in <b style="color: var(--blue-text)">blue</b> have a DataForSEO spam score of 30 or lower (a cleaner link profile). Click rows to select them (green), then use <b>Open selected on GoDaddy</b> to open them all at once. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
         <div class="xp-tools">
           <div class="xp-chips" role="group" aria-label="Filter by status"></div>
           <button class="xp-chip is-niche" id="xp-niche" type="button" aria-pressed="false">Plumbing, HVAC &amp; water only</button>
           <input class="xp-search" id="xp-search" type="search" placeholder="Search domain, business, city" aria-label="Search domains">
+        </div>
+        <div class="xp-selbar">
+          <button class="xp-btn is-buy" id="xp-open" type="button" disabled>Open selected on GoDaddy</button>
+          <button class="xp-btn" id="xp-clear" type="button" disabled>Clear selection</button>
+          <span class="xp-selmsg" id="xp-selmsg" role="status">Click rows to select the domains you want to bid on.</span>
         </div>
         <p class="xp-empty" id="xp-empty" hidden></p>
         <div class="xp-scroll">
@@ -586,6 +596,31 @@ window.dash = (() => {
     if (state.marked.has(k)) state.marked.delete(k); else state.marked.add(k);
     tr.classList.toggle('is-marked', state.marked.has(k));
     tr.setAttribute('aria-selected', String(state.marked.has(k)));
+    selectionChanged();
+  });
+
+  // Open every selected domain's GoDaddy listing in its own tab, from one click.
+  const openBtn = document.getElementById('xp-open'), clearBtn = document.getElementById('xp-clear');
+  const selMsg = document.getElementById('xp-selmsg');
+  function selectionChanged(msg, warn) {
+    const n = state.marked.size;
+    openBtn.disabled = clearBtn.disabled = n === 0;
+    openBtn.textContent = n ? `Open ${n} on GoDaddy ↗` : 'Open selected on GoDaddy';
+    selMsg.classList.toggle('is-warn', !!warn);
+    selMsg.textContent = msg || (n ? `${n} selected. Each opens in its own tab.` : 'Click rows to select the domains you want to bid on.');
+  }
+  openBtn.addEventListener('click', () => {
+    const D = dash.data('domains');
+    const byDomain = new Map((D.status === 'ok' ? D.data : []).map((r) => [r.domain, r]));
+    const urls = [...state.marked].map((d) => gdUrl(byDomain.get(d) || { domain: d }));
+    // A browser lets one click open one tab unless pop-ups are allowed for the site, so the message says how.
+    urls.forEach((u) => { try { window.open(u, '_blank', 'noopener'); } catch (e) { /* blocked */ } });
+    selectionChanged(`Opened ${urls.length} GoDaddy tab${urls.length === 1 ? '' : 's'}. If only one appeared, allow pop-ups for this site (icon at the right of the address bar) and click again.`, false);
+  });
+  clearBtn.addEventListener('click', () => {
+    state.marked.clear();
+    document.querySelectorAll('.xp-freeze tbody tr.is-marked').forEach((tr) => { tr.classList.remove('is-marked'); tr.setAttribute('aria-selected', 'false'); });
+    selectionChanged();
   });
 
   function freezeOffsets() {
