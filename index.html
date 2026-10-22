@@ -269,7 +269,7 @@ window.dash = (() => {
           <div class="xp-sub">.com .net .org · Google profiles in the US, UK, Canada, Australia, New Zealand, Ireland · niche names anywhere</div>
           <h2>English Google-profile domains and niche names</h2>
         </div>
-        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Rows in <b style="color: var(--blue-text)">blue</b> have a DataForSEO spam score of 30 or lower (a cleaner link profile). Rows in <b style="color: var(--violet-text)">purple</b> are domains you have already bid on (from your GoDaddy buying list, refreshed daily). Use <b>▸</b> next to a domain to see all its details. Click rows to select them (green), then use <b>Open selected on GoDaddy</b> to open them all at once. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
+        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Rows in <b style="color: var(--blue-text)">blue</b> have a DataForSEO spam score of 30 or lower (a cleaner link profile). Rows in <b style="color: var(--violet-text)">purple</b> are domains you have already bid on (from your GoDaddy buying list, refreshed daily). Use <b>▸</b> next to a domain to see all its details. Click rows to select them (green), then use <b>Open selected on GoDaddy</b> to open them all at once, or <b>Hide</b> to remove domains you don't want from the list. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
         <div class="xp-tools">
           <div class="xp-chips" role="group" aria-label="Filter by status"></div>
           <button class="xp-chip is-niche" id="xp-niche" type="button" aria-pressed="false">Plumbing, HVAC &amp; water only</button>
@@ -278,6 +278,8 @@ window.dash = (() => {
         <div class="xp-selbar">
           <button class="xp-btn is-buy" id="xp-open" type="button" disabled>Open selected on GoDaddy</button>
           <button class="xp-btn" id="xp-clear" type="button" disabled>Clear selection</button>
+          <button class="xp-btn" id="xp-hide" type="button" disabled>Hide selected</button>
+          <button class="xp-chip" id="xp-showhidden" type="button" aria-pressed="false" hidden>Show hidden</button>
           <span class="xp-selmsg" id="xp-selmsg" role="status">Click rows to select the domains you want to bid on.</span>
         </div>
         <p class="xp-empty" id="xp-empty" hidden></p>
@@ -474,7 +476,12 @@ window.dash = (() => {
 
   // Domains table
   const STATUS = [['Ready to buy', 's-buy'], ['Name match', 's-name'], ['Check Google Maps', 's-review'], ['Business still open', 's-open'], ['Blocked', 's-open']];
-  const state = { status: 'Ready to buy', q: '', sort: 'score', dir: -1, niche: false, marked: new Set(), expanded: new Set() };
+  const state = { status: 'Ready to buy', q: '', sort: 'score', dir: -1, niche: false, marked: new Set(), expanded: new Set(),
+    showHidden: false };
+  // Domains you hid. Kept in this browser (where allowed) until the daily refresh reads the list and removes them for good.
+  const HKEY = 'xdHiddenDomains';
+  const hidden = (() => { try { return new Map(Object.entries(JSON.parse(localStorage.getItem(HKEY) || '{}'))); } catch (e) { return new Map(); } })();
+  function saveHidden() { try { localStorage.setItem(HKEY, JSON.stringify(Object.fromEntries(hidden))); return true; } catch (e) { return false; } }
   const chips = document.querySelector('.xp-chips');
   const search = document.getElementById('xp-search');
   const nicheBtn = document.getElementById('xp-niche');
@@ -550,10 +557,15 @@ window.dash = (() => {
     tb.replaceChildren(); chips.replaceChildren();
     const empty = document.getElementById('xp-empty');
     if (D.status !== 'ok') { empty.hidden = true; return; }
-    const nicheCount = D.data.filter((r) => r.niche).length;
+    const visible = D.data.filter((r) => (state.showHidden ? hidden.has(r.domain) : !hidden.has(r.domain)));
+    const nHidden = D.data.filter((r) => hidden.has(r.domain)).length;
+    showHiddenBtn.hidden = nHidden === 0 && !state.showHidden;
+    showHiddenBtn.setAttribute('aria-pressed', String(state.showHidden));
+    showHiddenBtn.textContent = state.showHidden ? 'Back to the list' : `Show hidden · ${fmtInt(nHidden)}`;
+    const nicheCount = visible.filter((r) => r.niche).length;
     nicheBtn.setAttribute('aria-pressed', String(state.niche));
     nicheBtn.textContent = `Plumbing, HVAC & water only · ${fmtInt(nicheCount)}`;
-    const rows = state.niche ? D.data.filter((r) => r.niche) : D.data;
+    const rows = state.niche ? visible.filter((r) => r.niche) : visible;
     const counts = d3.rollup(rows, (v) => v.length, (d) => d.status);
     [['All', null], ...STATUS.map(([s]) => [s, s])].forEach(([label, val]) => {
       if (val && !counts.get(val)) return;
@@ -646,12 +658,15 @@ window.dash = (() => {
 
   // Open every selected domain's GoDaddy listing in its own tab, from one click.
   const openBtn = document.getElementById('xp-open'), clearBtn = document.getElementById('xp-clear');
+  const hideBtn = document.getElementById('xp-hide'), showHiddenBtn = document.getElementById('xp-showhidden');
   const selMsg = document.getElementById('xp-selmsg');
   let queue = [];   // tabs the browser blocked, opened one per click by "Open next"
   function selectionChanged(msg, warn) {
     const n = state.marked.size;
     if (!msg) queue = [];   // a new selection starts over
     openBtn.disabled = clearBtn.disabled = n === 0 && !queue.length;
+    hideBtn.disabled = n === 0;
+    hideBtn.textContent = state.showHidden ? (n ? `Unhide ${n}` : 'Unhide selected') : (n ? `Hide ${n}` : 'Hide selected');
     openBtn.textContent = queue.length ? `Open next: ${queue[0].domain} (${queue.length} left) ↗`
       : n ? `Open ${n} on GoDaddy ↗` : 'Open selected on GoDaddy';
     const D = dash.data('domains');
@@ -686,6 +701,23 @@ window.dash = (() => {
     queue = blocked;
     selectionChanged(`Opened ${opened} of ${items.length}: your browser blocked the other ${blocked.length}. `
       + 'Click "Open next" for each one, or allow pop-ups for this page (the blocked-pop-up icon at the right of the address bar → Always allow) and every tab will open at once next time.', true);
+  });
+  hideBtn.addEventListener('click', () => {
+    const ds = [...state.marked];
+    if (!ds.length) return;
+    const when = new Date().toISOString();
+    ds.forEach((d) => (state.showHidden ? hidden.delete(d) : hidden.set(d, when)));
+    const kept = saveHidden();
+    state.marked.clear(); queue = [];
+    drawDomains(); freezeOffsets();
+    selectionChanged(state.showHidden
+      ? `Unhid ${ds.length}: back in the list.`
+      : `Hid ${ds.length}. ` + (kept ? 'They stay hidden in this browser and drop out of the list for good at the next daily refresh. "Show hidden" undoes it.'
+        : 'This page can only hide them until you reload; use the GitHub dashboard to keep them hidden, or tell Claude which to remove.'), !kept);
+  });
+  showHiddenBtn.addEventListener('click', () => {
+    state.showHidden = !state.showHidden; state.marked.clear(); state.status = null;
+    drawDomains(); freezeOffsets(); selectionChanged();
   });
   clearBtn.addEventListener('click', () => {
     state.marked.clear(); queue = [];
