@@ -197,8 +197,25 @@ window.dash = (() => {
   .xp-selbar button.xp-btn[disabled] { opacity: .45; cursor: default; }
   .xp-selmsg { font-size: 13px; color: var(--muted); }
   .xp-selmsg.is-warn { color: var(--amber-text); font-weight: 600; }
+  .xp-exp { font: inherit; font-size: 12px; line-height: 1; width: 22px; height: 22px; margin-right: 8px; vertical-align: middle;
+    border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); color: var(--ink-soft); cursor: pointer; }
+  .xp-exp:hover, .xp-exp[aria-expanded="true"] { border-color: var(--accent-strong); color: var(--accent-text); }
+  .xp-exp:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+  .xp-nowrap { white-space: nowrap; }
+  /* Keep the domain table inside the page: long names wrap, link buttons stack. */
+  .xp-freeze td.xp-dom { white-space: normal; overflow-wrap: anywhere; min-width: 11rem; max-width: 16rem; }
+  .xp-freeze .xp-actions { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .xp-freeze .xp-actions .xp-btn, .xp-freeze .xp-bidtag { padding: 3px 8px; font-size: 11px; }
+  .xp-freeze tbody tr.xp-detail td { position: static; box-shadow: none; background: var(--surface-soft); cursor: default; padding: 14px 16px 16px; }
+  .xp-dgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); gap: 12px 20px; margin: 0; }
+  .xp-dgrid > div { min-width: 0; }
+  .xp-dgrid > div.is-wide { grid-column: span 2; }
+  @media (max-width: 520px) { .xp-dgrid > div.is-wide { grid-column: auto; } }
+  .xp-dgrid dt { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 3px; }
+  .xp-dgrid dd { margin: 0; font-size: 14px; color: var(--ink); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
   .xp-empty { margin: 0; padding: 14px; border: 1px dashed var(--line-strong); border-radius: var(--r-sm); color: var(--muted); font-size: 14px; background: var(--surface-soft); }
   @media (max-width: 760px) { .xp-hide-sm { display: none; } }
+  @media (max-width: 1360px) { .xp-hide-md { display: none; } }
   .xp [data-dash-source-state=empty] { color: transparent; }
   .xp [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
 </style>
@@ -252,7 +269,7 @@ window.dash = (() => {
           <div class="xp-sub">.com .net .org · Google profiles in the US, UK, Canada, Australia, New Zealand, Ireland · niche names anywhere</div>
           <h2>English Google-profile domains and niche names</h2>
         </div>
-        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Rows in <b style="color: var(--blue-text)">blue</b> have a DataForSEO spam score of 30 or lower (a cleaner link profile). Rows in <b style="color: var(--violet-text)">purple</b> are domains you have already bid on (from your GoDaddy buying list, refreshed daily). Click rows to select them (green), then use <b>Open selected on GoDaddy</b> to open them all at once. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
+        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Rows in <b style="color: var(--blue-text)">blue</b> have a DataForSEO spam score of 30 or lower (a cleaner link profile). Rows in <b style="color: var(--violet-text)">purple</b> are domains you have already bid on (from your GoDaddy buying list, refreshed daily). Use <b>▸</b> next to a domain to see all its details. Click rows to select them (green), then use <b>Open selected on GoDaddy</b> to open them all at once. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
         <div class="xp-tools">
           <div class="xp-chips" role="group" aria-label="Filter by status"></div>
           <button class="xp-chip is-niche" id="xp-niche" type="button" aria-pressed="false">Plumbing, HVAC &amp; water only</button>
@@ -271,30 +288,14 @@ window.dash = (() => {
               <th data-field="gmb">GMB</th>
               <th data-field="domain"><button class="xp-sort" data-sort="domain">Domain</button></th>
               <th aria-label="Links"></th>
-              <th data-field="registered"><button class="xp-sort" data-sort="registered">Registered</button></th>
-              <th data-field="first_archived"><button class="xp-sort" data-sort="first_archived">First archived</button></th>
-              <th class="r" data-field="age_years"><button class="xp-sort" data-sort="age_years" title="Domain age in years, from GoDaddy">Age</button></th>
-              <th class="r" data-field="semrush_as"><button class="xp-sort" data-sort="semrush_as" title="Semrush Authority Score, 0 to 100, from GoDaddy">Semrush AS</button></th>
-              <th class="r xp-hide-sm" data-field="semrush_ref_domains"><button class="xp-sort" data-sort="semrush_ref_domains" title="Semrush referring domains, from GoDaddy">Semrush ref.</button></th>
-              <th class="r" data-field="cpc_usd"><button class="xp-sort" data-sort="cpc_usd" title="Semrush cost per click for the name, from GoDaddy">CPC</button></th>
-              <th class="r xp-hide-sm" data-field="valuation_usd"><button class="xp-sort" data-sort="valuation_usd" title="GoDaddy's estimated value">Valuation</button></th>
-              <th class="r" data-field="dfs_rank"><button class="xp-sort" data-sort="dfs_rank" title="DataForSEO domain rank, 0 to 100">DFS rank</button></th>
-              <th class="r" data-field="ref_domains"><button class="xp-sort" data-sort="ref_domains">Ref. domains</button></th>
-              <th class="r xp-hide-sm" data-field="backlinks"><button class="xp-sort" data-sort="backlinks">Backlinks</button></th>
-              <th class="r xp-hide-sm" data-field="spam_score"><button class="xp-sort" data-sort="spam_score" title="DataForSEO spam score, 0 to 100; lower is better">Spam</button></th>
+              <th class="r" data-field="age_years"><button class="xp-sort" data-sort="age_years" title="Domain age in years">Age</button></th>
+              <th class="r" data-field="dfs_rank"><button class="xp-sort" data-sort="dfs_rank" title="DataForSEO domain rank, 0 to 100">DFS</button></th>
+              <th class="r" data-field="spam_score"><button class="xp-sort" data-sort="spam_score" title="DataForSEO spam score, 0 to 100; lower is better">Spam</button></th>
+              <th class="r" data-field="semrush_as"><button class="xp-sort" data-sort="semrush_as" title="Semrush Authority Score, 0 to 100, from GoDaddy">Semrush</button></th>
+              <th class="r xp-hide-md" data-field="ref_domains"><button class="xp-sort" data-sort="ref_domains" title="DataForSEO referring domains">Ref. doms</button></th>
               <th class="r" data-field="price_usd"><button class="xp-sort" data-sort="price_usd">Price</button></th>
-              <th class="r xp-hide-sm" data-field="bids"><button class="xp-sort" data-sort="bids">Bids</button></th>
-              <th data-field="lifecycle">Registry</th>
-              <th data-field="auction_end">Auction ends</th>
+              <th class="xp-hide-sm" data-field="auction_end"><button class="xp-sort" data-sort="auction_end" title="When the GoDaddy auction ends">Ends</button></th>
               <th class="r" data-field="score"><button class="xp-sort" data-sort="score">Score</button></th>
-              <th class="r xp-hide-sm" data-field="reviews"><button class="xp-sort" data-sort="reviews">Reviews</button></th>
-              <th class="xp-hide-sm" data-field="niche_source">Niche match</th>
-              <th class="xp-hide-sm" data-field="top_referrers">Top referrers</th>
-              <th class="xp-hide-sm" data-field="reason">Why blocked</th>
-              <th data-field="business">Business</th>
-              <th class="xp-hide-sm" data-field="category">Category</th>
-              <th class="xp-hide-sm" data-field="city">City</th>
-              <th class="xp-hide-sm" data-field="country">Country</th>
             </tr></thead>
             <tbody></tbody>
           </table>
@@ -473,7 +474,7 @@ window.dash = (() => {
 
   // Domains table
   const STATUS = [['Ready to buy', 's-buy'], ['Name match', 's-name'], ['Check Google Maps', 's-review'], ['Business still open', 's-open'], ['Blocked', 's-open']];
-  const state = { status: 'Ready to buy', q: '', sort: 'score', dir: -1, niche: false, marked: new Set() };
+  const state = { status: 'Ready to buy', q: '', sort: 'score', dir: -1, niche: false, marked: new Set(), expanded: new Set() };
   const chips = document.querySelector('.xp-chips');
   const search = document.getElementById('xp-search');
   const nicheBtn = document.getElementById('xp-niche');
@@ -499,6 +500,48 @@ window.dash = (() => {
     a.className = 'xp-btn ' + cls; a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
     a.textContent = text; a.setAttribute('aria-label', label);
     return a;
+  }
+
+  // The details panel under a row: every other field, so nothing needs sideways scrolling.
+  const DETAILS = [
+    ['Registered', 'registered', (v) => fmtDate(new Date(v)) + (years(v) != null ? ` (${years(v)} yrs)` : '')],
+    ['First archived', 'first_archived', (v) => fmtMonth(new Date(v))],
+    ['Months archived', 'archived_months', fmtInt],
+    ['Registry', 'lifecycle', String],
+    ['Auction ends', 'auction_end', (v) => fmtWhen(new Date(v)) + ' UTC'],
+    ['Bids', 'bids', fmtInt],
+    ['DFS referring domains', 'ref_domains', fmtInt],
+    ['DFS backlinks', 'backlinks', fmtInt],
+    ['Semrush referring domains', 'semrush_ref_domains', fmtInt],
+    ['Semrush backlinks', 'semrush_backlinks', fmtInt],
+    ['CPC', 'cpc_usd', (v) => (v ? fmtUsd(v) : '$0')],
+    ['Search volume', 'search_volume', fmtInt],
+    ['GoDaddy valuation', 'valuation_usd', (v) => '$' + fmtInt(v)],
+    ['Niche match', 'niche_source', String],
+    ['Business', 'business', String, true],
+    ['Category', 'category', String],
+    ['City', 'city', String],
+    ['Country', 'country', String],
+    ['Google reviews', 'reviews', fmtInt],
+    ['Rating', 'rating', (v) => d3.format('.1f')(v)],
+    ['Top referring domains', 'top_referrers', String, true],
+    ['Why blocked', 'reason', String, true],
+  ];
+  function detailRow(r, span) {
+    const tr = document.createElement('tr'); tr.className = 'xp-detail';
+    const cell = document.createElement('td'); cell.colSpan = span;
+    const grid = document.createElement('dl'); grid.className = 'xp-dgrid';
+    DETAILS.forEach(([label, field, fmt, wide]) => {
+      const v = r[field];
+      if (v == null || v === '') return;
+      const box = document.createElement('div'); if (wide) box.className = 'is-wide';
+      const dt = document.createElement('dt'); dt.textContent = label;
+      const dd = document.createElement('dd'); dd.textContent = fmt(v);
+      dd.dataset.source = 'domains'; dd.dataset.field = field; dd.dataset.where = 'domain=' + encodeURIComponent(r.domain);
+      box.append(dt, dd); grid.append(box);
+    });
+    cell.append(grid); tr.append(cell);
+    return tr;
   }
 
   function drawDomains() {
@@ -548,7 +591,14 @@ window.dash = (() => {
       pill.textContent = r.status;
       td('').append(pill);
       td('xp-gmb' + (r.gmb === 'Has GMB' ? ' is-has' : ''), r.gmb || '');
-      td('xp-dom', r.domain);
+      const open = state.expanded.has(r.domain);
+      const dc = td('xp-dom');
+      const exp = document.createElement('button');
+      exp.type = 'button'; exp.className = 'xp-exp'; exp.dataset.exp = r.domain;
+      exp.textContent = open ? '▾' : '▸';
+      exp.setAttribute('aria-expanded', String(open));
+      exp.setAttribute('aria-label', (open ? 'Hide' : 'Show') + ' details for ' + r.domain);
+      dc.append(exp, document.createTextNode(r.domain));
       const acts = document.createElement('div'); acts.className = 'xp-actions';
       if (r.bid) {
         const tag = document.createElement('span'); tag.className = 'xp-bidtag';
@@ -563,44 +613,27 @@ window.dash = (() => {
       }
       if (r.wayback_url && /^https:\/\/web\.archive\.org\//.test(r.wayback_url)) acts.append(link('', r.wayback_url, 'Wayback ↗', `Wayback Machine archive of ${r.domain}`));
       td('').append(acts);
-      const reg = td('xp-age');
-      if (r.registered) {
-        reg.textContent = fmtDate(new Date(r.registered));
-        const y = years(r.registered);
-        if (y != null) { const s = document.createElement('small'); s.textContent = y < 1 ? 'under a year' : `${y} yr${y === 1 ? '' : 's'}`; reg.append(s); }
-      }
-      const fa = td('xp-age');
-      if (r.first_archived) {
-        fa.textContent = fmtMonth(new Date(r.first_archived));
-        if (r.archived_months) { const s = document.createElement('small'); s.textContent = `${fmtInt(r.archived_months)} months archived`; fa.append(s); }
-      }
       td('r', r.age_years == null ? '' : `${fmtInt(r.age_years)} yr${r.age_years === 1 ? '' : 's'}`);
-      td('r', r.semrush_as == null ? '' : fmtInt(r.semrush_as));
-      td('r xp-hide-sm', r.semrush_ref_domains == null ? '' : fmtInt(r.semrush_ref_domains));
-      td('r', r.cpc_usd ? fmtUsd(r.cpc_usd) : '');
-      td('r xp-hide-sm', r.valuation_usd ? '$' + fmtInt(r.valuation_usd) : '');
       td('r', r.dfs_rank == null ? '' : fmtInt(r.dfs_rank));
-      td('r', r.ref_domains == null ? '' : fmtInt(r.ref_domains));
-      td('r xp-hide-sm', r.backlinks == null ? '' : fmtInt(r.backlinks));
-      td('r xp-hide-sm', r.spam_score == null ? '' : fmtInt(r.spam_score));
+      td('r', r.spam_score == null ? '' : fmtInt(r.spam_score));
+      td('r', r.semrush_as == null ? '' : fmtInt(r.semrush_as));
+      td('r xp-hide-md', r.ref_domains == null ? '' : fmtInt(r.ref_domains));
       td('r', fmtUsd(r.price_usd));
-      td('r xp-hide-sm', r.bids == null ? '' : fmtInt(r.bids));
-      td('', r.lifecycle);
       const end = r.auction_end ? new Date(r.auction_end) : null;
-      td(end && end.getTime() < now ? 'xp-ended' : '', end ? (end.getTime() < now ? 'ended ' : '') + fmtDay(end) : '');
+      td('xp-hide-sm ' + (end && end.getTime() < now ? 'xp-ended' : 'xp-nowrap'), end ? (end.getTime() < now ? 'ended ' : '') + fmtDay(end) : '');
       td('r', r.score == null ? '' : fmtInt(r.score));
-      td('r xp-hide-sm', r.reviews == null ? '' : fmtInt(r.reviews));
-      td('xp-hide-sm', r.niche_source || '');
-      td('xp-reason xp-hide-sm', r.top_referrers || '');
-      td('xp-reason xp-hide-sm', r.reason || '');
-      td('xp-biz', r.business || '');
-      td('xp-hide-sm', r.category || '');
-      td('xp-hide-sm', r.city || '');
-      td('xp-hide-sm', r.country || '');
       tb.append(tr);
+      if (open) tb.append(detailRow(r, tr.children.length));
     });
   }
   document.querySelector('.xp-table.xp-freeze tbody').addEventListener('click', (e) => {
+    const exp = e.target.closest('button.xp-exp');
+    if (exp) {   // ▸ / ▾ opens or closes the details panel under that row
+      const k = exp.dataset.exp;
+      if (state.expanded.has(k)) state.expanded.delete(k); else state.expanded.add(k);
+      drawDomains(); freezeOffsets();
+      return;
+    }
     if (e.target.closest('a, button')) return;   // links keep working
     const tr = e.target.closest('tr[data-key]');
     if (!tr) return;
