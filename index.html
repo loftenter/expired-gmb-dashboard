@@ -647,26 +647,48 @@ window.dash = (() => {
   // Open every selected domain's GoDaddy listing in its own tab, from one click.
   const openBtn = document.getElementById('xp-open'), clearBtn = document.getElementById('xp-clear');
   const selMsg = document.getElementById('xp-selmsg');
+  let queue = [];   // tabs the browser blocked, opened one per click by "Open next"
   function selectionChanged(msg, warn) {
     const n = state.marked.size;
-    openBtn.disabled = clearBtn.disabled = n === 0;
-    openBtn.textContent = n ? `Open ${n} on GoDaddy ↗` : 'Open selected on GoDaddy';
+    if (!msg) queue = [];   // a new selection starts over
+    openBtn.disabled = clearBtn.disabled = n === 0 && !queue.length;
+    openBtn.textContent = queue.length ? `Open next: ${queue[0].domain} (${queue.length} left) ↗`
+      : n ? `Open ${n} on GoDaddy ↗` : 'Open selected on GoDaddy';
     const D = dash.data('domains');
     const bidOn = D.status === 'ok' ? D.data.filter((r) => r.bid && state.marked.has(r.domain)).map((r) => r.domain) : [];
     if (!msg && bidOn.length) { msg = `${n} selected, including ${bidOn.length} you already bid on: ${bidOn.join(', ')}.`; warn = true; }
     selMsg.classList.toggle('is-warn', !!warn);
     selMsg.textContent = msg || (n ? `${n} selected. Each opens in its own tab.` : 'Click rows to select the domains you want to bid on.');
   }
+  // Opens one tab; returns false when the browser's pop-up blocker stopped it (window.open gives null).
+  function openTab(url) {
+    let w = null;
+    try { w = window.open(url, '_blank'); } catch (e) { w = null; }
+    if (!w) return false;
+    try { w.opener = null; } catch (e) { /* cross-origin already */ }
+    return true;
+  }
   openBtn.addEventListener('click', () => {
+    if (queue.length) {   // fallback: each click is allowed one tab, so open the next blocked one
+      const next = queue.shift();
+      const ok = openTab(next.url);
+      if (!ok) queue.unshift(next);
+      selectionChanged(ok ? (queue.length ? `Opened ${next.domain}. Click again for the next one.` : `Opened ${next.domain}. That was the last one.`)
+        : 'Your browser blocked that tab too. Allow pop-ups for this page, then click again.', !ok);
+      return;
+    }
     const D = dash.data('domains');
     const byDomain = new Map((D.status === 'ok' ? D.data : []).map((r) => [r.domain, r]));
-    const urls = [...state.marked].map((d) => gdUrl(byDomain.get(d) || { domain: d }));
-    // A browser lets one click open one tab unless pop-ups are allowed for the site, so the message says how.
-    urls.forEach((u) => { try { window.open(u, '_blank', 'noopener'); } catch (e) { /* blocked */ } });
-    selectionChanged(`Opened ${urls.length} GoDaddy tab${urls.length === 1 ? '' : 's'}. If only one appeared, allow pop-ups for this site (icon at the right of the address bar) and click again.`, false);
+    const items = [...state.marked].map((d) => ({ domain: d, url: gdUrl(byDomain.get(d) || { domain: d }) }));
+    const blocked = items.filter((it) => !openTab(it.url));
+    const opened = items.length - blocked.length;
+    if (!blocked.length) { selectionChanged(`Opened all ${opened} in their own tabs.`, false); return; }
+    queue = blocked;
+    selectionChanged(`Opened ${opened} of ${items.length}: your browser blocked the other ${blocked.length}. `
+      + 'Click "Open next" for each one, or allow pop-ups for this page (the blocked-pop-up icon at the right of the address bar → Always allow) and every tab will open at once next time.', true);
   });
   clearBtn.addEventListener('click', () => {
-    state.marked.clear();
+    state.marked.clear(); queue = [];
     document.querySelectorAll('.xp-freeze tbody tr.is-marked').forEach((tr) => { tr.classList.remove('is-marked'); tr.setAttribute('aria-selected', 'false'); });
     selectionChanged();
   });
