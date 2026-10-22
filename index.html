@@ -146,7 +146,7 @@ window.dash = (() => {
   .xp-table td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
   .xp-table tr:last-child td { border-bottom: 0; }
   .xp-table tbody tr:hover td { background: var(--surface-soft); }
-  .xp-table .r { text-align: right; }
+  .xp-table .r { text-align: right; white-space: nowrap; }
   .xp-sort { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
   .xp-dom { font-weight: 700; white-space: nowrap; font-size: 14px; }
   .xp-biz { color: var(--ink-soft); min-width: 12rem; }
@@ -171,6 +171,17 @@ window.dash = (() => {
   .xp-warn { color: var(--amber-text); font-weight: 600; }
   .xp-ok { color: var(--accent-text); font-weight: 600; }
   .xp-soon { color: var(--amber-text); font-weight: 700; white-space: nowrap; }
+  /* Freeze Status, GMB and Domain while the table scrolls sideways; --f1/--f2 are set from the measured widths. */
+  .xp-freeze :is(th, td):nth-child(-n+3) { position: sticky; z-index: 2; background: var(--surface); }
+  .xp-freeze th:nth-child(-n+3) { z-index: 4; background: var(--surface-soft); }
+  .xp-freeze :is(th, td):nth-child(1) { left: 0; }
+  .xp-freeze :is(th, td):nth-child(2) { left: var(--f1, 0px); }
+  .xp-freeze :is(th, td):nth-child(3) { left: var(--f2, 0px); box-shadow: 6px 0 8px -6px rgb(18 25 20 / 25%); }
+  .xp-freeze tbody tr:hover td:nth-child(-n+3) { background: var(--surface-soft); }
+  /* Click a row to highlight it (kept while the page is open). */
+  .xp-freeze tbody tr { cursor: pointer; }
+  .xp-freeze tbody tr.is-marked td, .xp-freeze tbody tr.is-marked:hover td { background: var(--accent-soft); }
+  .xp-freeze tbody tr.is-marked td:first-child { box-shadow: inset 4px 0 0 var(--accent-strong); }
   .xp-empty { margin: 0; padding: 14px; border: 1px dashed var(--line-strong); border-radius: var(--r-sm); color: var(--muted); font-size: 14px; background: var(--surface-soft); }
   @media (max-width: 760px) { .xp-hide-sm { display: none; } }
   .xp [data-dash-source-state=empty] { color: transparent; }
@@ -226,7 +237,7 @@ window.dash = (() => {
           <div class="xp-sub">.com .net .org · Google profiles in the US, UK, Canada, Australia, New Zealand, Ireland · niche names anywhere</div>
           <h2>English Google-profile domains and niche names</h2>
         </div>
-        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
+        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Click a row to highlight it. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
         <div class="xp-tools">
           <div class="xp-chips" role="group" aria-label="Filter by status"></div>
           <button class="xp-chip is-niche" id="xp-niche" type="button" aria-pressed="false">Plumbing, HVAC &amp; water only</button>
@@ -234,7 +245,7 @@ window.dash = (() => {
         </div>
         <p class="xp-empty" id="xp-empty" hidden></p>
         <div class="xp-scroll">
-          <table class="xp-table" data-source="domains" data-row-key="domain">
+          <table class="xp-table xp-freeze" data-source="domains" data-row-key="domain">
             <thead><tr>
               <th data-field="status">Status</th>
               <th data-field="gmb">GMB</th>
@@ -442,7 +453,7 @@ window.dash = (() => {
 
   // Domains table
   const STATUS = [['Ready to buy', 's-buy'], ['Name match', 's-name'], ['Check Google Maps', 's-review'], ['Business still open', 's-open'], ['Blocked', 's-open']];
-  const state = { status: 'Ready to buy', q: '', sort: 'score', dir: -1, niche: false };
+  const state = { status: 'Ready to buy', q: '', sort: 'score', dir: -1, niche: false, marked: new Set() };
   const chips = document.querySelector('.xp-chips');
   const search = document.getElementById('xp-search');
   const nicheBtn = document.getElementById('xp-niche');
@@ -451,13 +462,13 @@ window.dash = (() => {
     state.status = state.niche ? null : 'Ready to buy';   // the niche view starts on every status
     state.sort = state.niche ? 'dfs_rank' : 'score';      // niche view: strongest DataForSEO rank first
     state.dir = -1;
-    drawDomains();
+    drawDomains(); freezeOffsets();
   });
-  search.addEventListener('input', () => { state.q = search.value.trim().toLowerCase(); drawDomains(); });
+  search.addEventListener('input', () => { state.q = search.value.trim().toLowerCase(); drawDomains(); freezeOffsets(); });
   document.querySelectorAll('.xp-sort').forEach((b) => b.addEventListener('click', () => {
     const asc = ['domain', 'registered', 'first_archived'].includes(b.dataset.sort);
     state.dir = state.sort === b.dataset.sort ? -state.dir : (asc ? 1 : -1);
-    state.sort = b.dataset.sort; drawDomains();
+    state.sort = b.dataset.sort; drawDomains(); freezeOffsets();
   }));
 
   const gdUrl = (r) => (r.auction_url && /^https:\/\/www\.godaddy\.com\/domain-auctions\//.test(r.auction_url)
@@ -487,7 +498,7 @@ window.dash = (() => {
       b.className = 'xp-chip'; b.type = 'button';
       b.setAttribute('aria-pressed', String(state.status === val));
       b.textContent = `${label} · ${fmtInt(val ? counts.get(val) : rows.length)}`;
-      b.addEventListener('click', () => { state.status = val; drawDomains(); });
+      b.addEventListener('click', () => { state.status = val; drawDomains(); freezeOffsets(); });
       chips.append(b);
     });
     const now = Date.now();
@@ -507,6 +518,8 @@ window.dash = (() => {
     shown.forEach((r) => {
       const tr = document.createElement('tr');
       tr.dataset.key = r.domain;
+      tr.classList.toggle('is-marked', state.marked.has(r.domain));
+      tr.setAttribute('aria-selected', String(state.marked.has(r.domain)));
       const td = (cls, text) => { const c = document.createElement('td'); if (cls) c.className = cls; if (text != null) c.textContent = text; tr.append(c); return c; };
       const pill = document.createElement('span');
       pill.className = 'xp-pill ' + ((STATUS.find(([s]) => s === r.status) || [, 's-open'])[1]);
@@ -560,7 +573,24 @@ window.dash = (() => {
       tb.append(tr);
     });
   }
-  dash.onData(drawDomains);
+  document.querySelector('.xp-table.xp-freeze tbody').addEventListener('click', (e) => {
+    if (e.target.closest('a, button')) return;   // links keep working
+    const tr = e.target.closest('tr[data-key]');
+    if (!tr) return;
+    const k = tr.dataset.key;
+    if (state.marked.has(k)) state.marked.delete(k); else state.marked.add(k);
+    tr.classList.toggle('is-marked', state.marked.has(k));
+    tr.setAttribute('aria-selected', String(state.marked.has(k)));
+  });
+
+  function freezeOffsets() {
+    const t = document.querySelector('.xp-table.xp-freeze');
+    const [a, b] = t ? t.querySelectorAll('thead th') : [];
+    if (!a || !b) return;
+    t.style.setProperty('--f1', a.offsetWidth + 'px');
+    t.style.setProperty('--f2', a.offsetWidth + b.offsetWidth + 'px');
+  }
+  dash.onData(() => { drawDomains(); freezeOffsets(); });
 
   // Bidding table
   dash.onData(() => {
