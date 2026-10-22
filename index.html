@@ -255,10 +255,6 @@ window.dash = (() => {
               <th data-field="gmb">GMB</th>
               <th data-field="domain"><button class="xp-sort" data-sort="domain">Domain</button></th>
               <th aria-label="Links"></th>
-              <th data-field="business">Business</th>
-              <th class="xp-hide-sm" data-field="category">Category</th>
-              <th class="xp-hide-sm" data-field="city">City</th>
-              <th class="xp-hide-sm" data-field="country">Country</th>
               <th data-field="registered"><button class="xp-sort" data-sort="registered">Registered</button></th>
               <th data-field="first_archived"><button class="xp-sort" data-sort="first_archived">First archived</button></th>
               <th class="r" data-field="age_years"><button class="xp-sort" data-sort="age_years" title="Domain age in years, from GoDaddy">Age</button></th>
@@ -279,6 +275,10 @@ window.dash = (() => {
               <th class="xp-hide-sm" data-field="niche_source">Niche match</th>
               <th class="xp-hide-sm" data-field="top_referrers">Top referrers</th>
               <th class="xp-hide-sm" data-field="reason">Why blocked</th>
+              <th data-field="business">Business</th>
+              <th class="xp-hide-sm" data-field="category">Category</th>
+              <th class="xp-hide-sm" data-field="city">City</th>
+              <th class="xp-hide-sm" data-field="country">Country</th>
             </tr></thead>
             <tbody></tbody>
           </table>
@@ -541,10 +541,6 @@ window.dash = (() => {
       }
       if (r.wayback_url && /^https:\/\/web\.archive\.org\//.test(r.wayback_url)) acts.append(link('', r.wayback_url, 'Wayback ↗', `Wayback Machine archive of ${r.domain}`));
       td('').append(acts);
-      td('xp-biz', r.business || '');
-      td('xp-hide-sm', r.category || '');
-      td('xp-hide-sm', r.city || '');
-      td('xp-hide-sm', r.country || '');
       const reg = td('xp-age');
       if (r.registered) {
         reg.textContent = fmtDate(new Date(r.registered));
@@ -575,6 +571,10 @@ window.dash = (() => {
       td('xp-hide-sm', r.niche_source || '');
       td('xp-reason xp-hide-sm', r.top_referrers || '');
       td('xp-reason xp-hide-sm', r.reason || '');
+      td('xp-biz', r.business || '');
+      td('xp-hide-sm', r.category || '');
+      td('xp-hide-sm', r.city || '');
+      td('xp-hide-sm', r.country || '');
       tb.append(tr);
     });
   }
