@@ -53,6 +53,7 @@ window.dash = (() => {
     --line: #dfe3db; --line-strong: #cbd1c8; --nav: #111713; --nav-muted: #98a29b; --nav-ink: #f3f4ee;
     --accent: #d7f65d; --accent-strong: #9cbd1f; --accent-ink: #253000; --accent-soft: #edf5cf; --accent-text: #526319;
     --amber-soft: #fff5e3; --amber-text: #92570f; --amber-line: #dcd4b4;
+    --blue-soft: #eaf0ff; --blue-line: #5b80e8; --blue-text: #455faf;
     --grid: rgb(18 25 20 / 5%);
     --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --r-sm: 8px; --r-md: 12px; --r-lg: 18px;
@@ -63,14 +64,14 @@ window.dash = (() => {
       --ink: #eef1ea; --ink-soft: #c9d0c6; --muted: #98a29b; --canvas: #0d120f; --surface: #161e19; --surface-soft: #1a231d;
       --line: #263029; --line-strong: #344037; --nav: #070b08; --nav-muted: #7d877f; --nav-ink: #eef1ea;
       --accent-soft: #2a3313; --accent-text: #c6e05a; --amber-soft: #2e2412; --amber-text: #e0b166; --amber-line: #4a3d22;
-      --grid: rgb(238 241 234 / 4%); --shadow: 0 18px 50px rgb(0 0 0 / 35%);
+      --blue-soft: #16213d; --blue-line: #6f90f0; --blue-text: #9fb6ff; --grid: rgb(238 241 234 / 4%); --shadow: 0 18px 50px rgb(0 0 0 / 35%);
     }
   }
   :root[data-theme="dark"] .xp {
     --ink: #eef1ea; --ink-soft: #c9d0c6; --muted: #98a29b; --canvas: #0d120f; --surface: #161e19; --surface-soft: #1a231d;
     --line: #263029; --line-strong: #344037; --nav: #070b08; --nav-muted: #7d877f; --nav-ink: #eef1ea;
     --accent-soft: #2a3313; --accent-text: #c6e05a; --amber-soft: #2e2412; --amber-text: #e0b166; --amber-line: #4a3d22;
-    --grid: rgb(238 241 234 / 4%); --shadow: 0 18px 50px rgb(0 0 0 / 35%);
+    --blue-soft: #16213d; --blue-line: #6f90f0; --blue-text: #9fb6ff; --grid: rgb(238 241 234 / 4%); --shadow: 0 18px 50px rgb(0 0 0 / 35%);
   }
   #dash-root { --dash-gutter: 0; }
 
@@ -180,6 +181,9 @@ window.dash = (() => {
   .xp-freeze tbody tr:hover td:nth-child(-n+3) { background: var(--surface-soft); }
   /* Click a row to highlight it (kept while the page is open). */
   .xp-freeze tbody tr { cursor: pointer; }
+  /* Blue: clean link profile (DataForSEO spam score 30 or lower). The green click highlight wins over it. */
+  .xp-freeze tbody tr.is-clean td, .xp-freeze tbody tr.is-clean:hover td { background: var(--blue-soft); }
+  .xp-freeze tbody tr.is-clean td:first-child { box-shadow: inset 4px 0 0 var(--blue-line); }
   .xp-freeze tbody tr.is-marked td, .xp-freeze tbody tr.is-marked:hover td { background: var(--accent-soft); }
   .xp-freeze tbody tr.is-marked td:first-child { box-shadow: inset 4px 0 0 var(--accent-strong); }
   .xp-empty { margin: 0; padding: 14px; border: 1px dashed var(--line-strong); border-radius: var(--r-sm); color: var(--muted); font-size: 14px; background: var(--surface-soft); }
@@ -237,7 +241,7 @@ window.dash = (() => {
           <div class="xp-sub">.com .net .org · Google profiles in the US, UK, Canada, Australia, New Zealand, Ireland · niche names anywhere</div>
           <h2>English Google-profile domains and niche names</h2>
         </div>
-        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Click a row to highlight it. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
+        <p class="xp-note"><b>Plumbing, HVAC &amp; water only</b> adds every for-sale domain with a plumbing, HVAC, drain, septic, water heater, softener, filter or purifier term in its name, whether or not it ever had a Google profile, so state and national sites show up too. Those are <b>Name match</b>: the GMB column says whether Google was checked, and the name alone says nothing about trademarks or past use, so look at Wayback before buying. Only <b>Ready to buy</b> has passed xd's Google-profile checks.  <b>Check Google Maps</b> needs a look first. An open business is a website lead, not a domain to take. Domains under 2 years old are left out (<b data-source="latest" data-field="hidden_too_young" data-row="0">—</b> hidden). Rows in <b style="color: var(--blue-text)">blue</b> have a DataForSEO spam score of 30 or lower (a cleaner link profile). Click a row to highlight it green. Registered is the current registration date from RDAP, which resets when a name drops and is re-registered, so the first Wayback capture is shown beside it. Age, Semrush Authority Score, Semrush referring domains, CPC, valuation, bids and top referrers come from GoDaddy's daily auction feed; DFS rank, referring domains, backlinks and spam score come from DataForSEO.</p>
         <div class="xp-tools">
           <div class="xp-chips" role="group" aria-label="Filter by status"></div>
           <button class="xp-chip is-niche" id="xp-niche" type="button" aria-pressed="false">Plumbing, HVAC &amp; water only</button>
@@ -519,6 +523,7 @@ window.dash = (() => {
       const tr = document.createElement('tr');
       tr.dataset.key = r.domain;
       tr.classList.toggle('is-marked', state.marked.has(r.domain));
+      tr.classList.toggle('is-clean', r.spam_score != null && r.spam_score <= 30);
       tr.setAttribute('aria-selected', String(state.marked.has(r.domain)));
       const td = (cls, text) => { const c = document.createElement('td'); if (cls) c.className = cls; if (text != null) c.textContent = text; tr.append(c); return c; };
       const pill = document.createElement('span');
